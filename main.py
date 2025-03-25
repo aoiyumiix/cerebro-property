@@ -16,7 +16,7 @@ def connect_db():
     return psycopg2.connect(
         dbname="cerebro_properties",
         user="postgres",
-        password="sketdance", 
+        password="cerebro", 
         host="localhost",
         port="5432"
     )
