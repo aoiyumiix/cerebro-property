@@ -1,9 +1,9 @@
 import os
 import tkinter as tk
 from tkinter import messagebox
+import psycopg2
 import qrcode
 from PIL import Image, ImageTk, ImageDraw, ImageFont
-import psycopg2  # ✅ PostgreSQL library
 import ttkbootstrap as tb
 from ttkbootstrap.scrolled import ScrolledFrame
 from ttkbootstrap.widgets import DateEntry
@@ -64,10 +64,10 @@ def generate_qr():
         frame = frame.resize((400, 400))
         frame.paste(qr, (100, 138))
 
-        # Draw purchase date text
         draw = ImageDraw.Draw(frame)
+
         try:
-            font = ImageFont.truetype("arialbd.ttf", 20)
+            font = ImageFont.truetype("arialbd.ttf", 18)
         except IOError:
             font = ImageFont.load_default()
             draw.text((200, 370), f"Purchase Date: {purchase_date}", fill="black", anchor="mm")
@@ -87,48 +87,60 @@ def generate_qr():
         messagebox.showerror("Error", "Template image 'cerebro_property_id.png' not found! Please check the assets folder.")
 
 
-# 🔹 Create UI Window
 root = tb.Window(themename="flatly")
 root.title("CEREBRO Property QR Code Generator")
 root.geometry("500x700")
 
-# Scrollable Frame
+header_frame = tk.Frame(root)
+header_frame.pack(fill="x", padx=10, pady=10)
+
+try:
+    logo_image = Image.open("assets/logo.png")  
+    logo_image = logo_image.resize((175, 78))  
+    logo_photo = ImageTk.PhotoImage(logo_image)
+    logo_label = tk.Label(header_frame, image=logo_photo)
+    logo_label.image = logo_photo
+    logo_label.pack(side="left", padx=10)
+except FileNotFoundError:
+    logo_label = tk.Label(header_frame, text="Logo Not Found")
+    logo_label.pack(side="left", padx=10)
+
 scroll_frame = ScrolledFrame(root, autohide=True)
 scroll_frame.pack(fill="both", expand=True, padx=10, pady=10)
 content_frame = scroll_frame
 
-# Title Label
-tb.Label(content_frame, text="CEREBRO PROPERTY ID", font=("Arial", 18, "bold"), bootstyle="primary").pack(pady=10)
+tb.Label(content_frame, text="PROPERTY IDENTIFICATION TAG", font=("Arial", 15, "bold"), bootstyle="primary").pack(pady=10)
 
-# Entry Fields Container
-entry_container = tb.LabelFrame(content_frame, text="Property Details", bootstyle="info")
-entry_container.pack(pady=10, fill="x", padx=10)
+entry_wrapper = tk.Frame(content_frame)
+entry_wrapper.pack(pady=10)
 
-# Property ID
+entry_container = tb.LabelFrame(entry_wrapper, text="Property Details", bootstyle="info")
+entry_container.pack(padx=10, pady=10)
+
 tb.Label(entry_container, text="Property ID:", font=("Arial", 10, "bold")).grid(row=0, column=0, padx=5, pady=5, sticky="e")
-entry_property_id = tb.Entry(entry_container, width=30, font=("Arial", 10))
-entry_property_id.grid(row=0, column=1, padx=5, pady=5)
+entry_property_id = tb.Entry(entry_container, width=30, font=("Arial", 10), justify="center")
+entry_property_id.grid(row=0, column=1, padx=5, pady=5, columnspan=2)
 
-# Purchase Date
 tb.Label(entry_container, text="Purchase Date:", font=("Arial", 10, "bold")).grid(row=1, column=0, padx=5, pady=5, sticky="e")
 purchase_date_entry = DateEntry(entry_container, dateformat="%m-%d-%Y", width=15)
-purchase_date_entry.grid(row=1, column=1, padx=5, pady=5)
+purchase_date_entry.grid(row=1, column=1, padx=5, pady=5, columnspan=2)
 
-# Property Name
-tb.Label(content_frame, text="Property Name:", font=("Arial", 10, "bold")).pack(pady=5)
-entry_property_name = tb.Entry(content_frame, width=50, font=("Arial", 10))
+property_name_frame = tk.Frame(content_frame)
+property_name_frame.pack(fill="x", pady=5)
+tb.Label(property_name_frame, text="Property Name:", font=("Arial", 10, "bold")).pack()
+entry_property_name = tb.Entry(property_name_frame, width=50, font=("Arial", 10), justify="center")
 entry_property_name.pack(pady=5)
 
-# Description
-tb.Label(content_frame, text="Description:", font=("Arial", 10, "bold")).pack(pady=5)
-text_description = tk.Text(content_frame, width=50, height=4, font=("Arial", 10))
+description_frame = tk.Frame(content_frame)
+description_frame.pack(fill="x", pady=5)
+tb.Label(description_frame, text="Description:", font=("Arial", 10, "bold")).pack()
+text_description = tk.Text(description_frame, width=50, height=4, font=("Arial", 10))
 text_description.pack(pady=5)
 
 # Generate QR Code Button
 btn_generate = tb.Button(content_frame, text="Generate & Save QR Code", bootstyle="primary", command=generate_qr, width=30)
 btn_generate.pack(pady=10)
 
-# QR Code Display
 qr_label = tb.Label(content_frame, bootstyle="light")
 qr_label.pack(pady=10)
 
