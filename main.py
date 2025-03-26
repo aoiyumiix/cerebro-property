@@ -7,6 +7,7 @@ from PIL import Image, ImageTk, ImageDraw, ImageFont
 import ttkbootstrap as tb
 from ttkbootstrap.scrolled import ScrolledFrame
 from ttkbootstrap.widgets import DateEntry
+from ttkbootstrap import Style
 
 # Ensure 'assets/qr_codes' directory exists
 os.makedirs("assets/qr_codes", exist_ok=True)
@@ -16,7 +17,7 @@ def connect_db():
     return psycopg2.connect(
         dbname="cerebro_properties",
         user="postgres",
-        password="cerebro", 
+        password="macarate", 
         host="localhost",
         port="5432"
     )
@@ -150,9 +151,6 @@ def on_search():
     search_query = search_entry.get().strip()
     load_properties(search_query, page=1)
 
-def view_property(property_id):
-    """View property details and allow updates."""
-    # Implement viewing and updating logic here
 
 def edit_property(property_id):
     """Edit and update property details."""
@@ -170,7 +168,7 @@ def edit_property(property_id):
         # Create a new window for editing
         edit_window = tk.Toplevel(root)
         edit_window.title("Edit Property")
-        edit_window.geometry("400x400")
+        edit_window.geometry("600x600")
 
         tb.Label(edit_window, text="Edit Property Details", font=("Arial", 15, "bold"), bootstyle="primary").pack(pady=10)
 
@@ -230,14 +228,18 @@ def edit_property(property_id):
 
 root = tb.Window(themename="flatly")
 root.title("CEREBRO Property QR Code Generator")
-root.geometry("600x800")  # Increased size for better layout
+root.geometry("1200x700") 
+
+icon_image = ImageTk.PhotoImage(file="assets/icon.png")  # Use your own icon file path
+root.iconphoto(False, icon_image)
 
 # Header with a bold title and subtle background
 header_frame = tk.Frame(root, bg="#f8f9fa", height=80)
 header_frame.pack(fill="x", padx=10, pady=10)
 
+# Load and display the logo
 try:
-    logo_image = Image.open("assets/logo.png").resize((175, 78))
+    logo_image = Image.open("assets/logo.png").resize((177, 78))
     logo_photo = ImageTk.PhotoImage(logo_image)
     logo_label = tk.Label(header_frame, image=logo_photo, bg="#f8f9fa")
     logo_label.image = logo_photo
@@ -246,36 +248,70 @@ except FileNotFoundError:
     logo_label = tk.Label(header_frame, text="Logo Not Found", bg="#f8f9fa", font=("Arial", 12, "bold"))
     logo_label.pack(side="left", padx=10)
 
-header_title = tk.Label(header_frame, text="CEREBRO Property Management", font=("Arial", 20, "bold"), bg="#f8f9fa", fg="#343a40")
-header_title.pack(side="left", padx=20)
+# Create a frame for dynamic width updates
+gradient_frame = tk.Frame(root, height=10)
+gradient_frame.pack(fill="x")
+
+# Create a Canvas for the gradient line
+gradient_canvas = tk.Canvas(gradient_frame, height=10, highlightthickness=0, bg="#ffffff")
+gradient_canvas.pack(fill="both", expand=True)
+
+# Function to create a smooth gradient
+def draw_gradient():
+    gradient_canvas.delete("all")  # Clear previous drawings
+    width = root.winfo_screenwidth()  # Get full screen width
+    height = 10  # Gradient thickness
+    start_color, end_color = "#ff0000", "#0000ff"
+
+    for i in range(width):
+        r = int((1 - i / width) * int(start_color[1:3], 16) + (i / width) * int(end_color[1:3], 16))
+        g = int((1 - i / width) * int(start_color[3:5], 16) + (i / width) * int(end_color[3:5], 16))
+        b = int((1 - i / width) * int(start_color[5:7], 16) + (i / width) * int(end_color[5:7], 16))
+        color = f"#{r:02x}{g:02x}{b:02x}"
+        gradient_canvas.create_line(i, 0, i, height, fill=color)
+
+# Call the gradient function after the window is fully loaded
+root.after(100, draw_gradient)
 
 # Scrollable content frame
 scroll_frame = ScrolledFrame(root, autohide=True)
 scroll_frame.pack(fill="both", expand=True, padx=10, pady=10)
 content_frame = scroll_frame
 
-# Title for the main section
-tb.Label(content_frame, text="PROPERTY IDENTIFICATION TAG", font=("Arial", 18, "bold"), bootstyle="primary").pack(pady=10)
+# Create a custom style
+style = Style()
+style.configure("CustomBlue.TLabel", foreground="#0671B7", font=("Arial", 18, "bold"))
 
-# Entry container with rounded corners
-entry_container = tb.LabelFrame(content_frame, text="Property Details", bootstyle="info", padding=10)
-entry_container.pack(padx=10, pady=10, fill="x")
+# Apply the custom style
+tb.Label(content_frame, text="PROPERTY IDENTIFICATION TAG", style="CustomBlue.TLabel").pack(pady=10)
+# Wrapper frame to center the container
+entry_wrapper = tk.Frame(content_frame)
+entry_wrapper.pack(pady=20)
 
-tb.Label(entry_container, text="Property ID:", font=("Arial", 12, "bold")).grid(row=0, column=0, padx=5, pady=5, sticky="e")
-entry_property_id = tb.Entry(entry_container, width=30, font=("Arial", 12), justify="center")
-entry_property_id.grid(row=0, column=1, padx=5, pady=5, columnspan=2)
+# Entry Fields Container
+entry_container = tb.LabelFrame(entry_wrapper, text="Property Details", bootstyle="info")
+entry_container.pack(fill="x", expand=True, padx=40, pady=20, ipadx=20, ipady=15)
 
-tb.Label(entry_container, text="Purchase Date:", font=("Arial", 12, "bold")).grid(row=1, column=0, padx=5, pady=5, sticky="e")
-purchase_date_entry = DateEntry(entry_container, dateformat="%m-%d-%Y", width=15)
-purchase_date_entry.grid(row=1, column=1, padx=5, pady=5, columnspan=2)
+# Property ID
+tb.Label(entry_container, text="Property ID:", font=("Arial", 12, "bold")).grid(row=0, column=0, padx=10, pady=10, sticky="w")
+entry_property_id = tb.Entry(entry_container, width=35, font=("Arial", 12))
+entry_property_id.grid(row=0, column=1, padx=10, pady=10)
 
-tb.Label(entry_container, text="Property Name:", font=("Arial", 12, "bold")).grid(row=2, column=0, padx=5, pady=5, sticky="e")
-entry_property_name = tb.Entry(entry_container, width=30, font=("Arial", 12), justify="center")
-entry_property_name.grid(row=2, column=1, padx=5, pady=5, columnspan=2)
+# Purchase Date
+tb.Label(entry_container, text="Purchase Date:", font=("Arial", 12, "bold")).grid(row=1, column=0, padx=10, pady=10, sticky="w")
+purchase_date_entry = DateEntry(entry_container, dateformat="%m-%d-%Y", width=18)
+purchase_date_entry.grid(row=1, column=1, padx=10, pady=10, sticky="w")
 
-tb.Label(entry_container, text="Description:", font=("Arial", 12, "bold")).grid(row=3, column=0, padx=5, pady=5, sticky="e")
-text_description = tk.Text(entry_container, width=30, height=3, font=("Arial", 12))
-text_description.grid(row=3, column=1, padx=5, pady=5, columnspan=2)
+# Property Name
+tb.Label(entry_container, text="Property Name:", font=("Arial", 12, "bold")).grid(row=2, column=0, padx=10, pady=10, sticky="w")
+entry_property_name = tb.Entry(entry_container, width=35, font=("Arial", 12))
+entry_property_name.grid(row=2, column=1, padx=10, pady=10)
+
+# Description
+tb.Label(entry_container, text="Description:", font=("Arial", 12, "bold")).grid(row=3, column=0, padx=10, pady=10, sticky="nw")
+text_description = tk.Text(entry_container, width=35, height=4, font=("Arial", 12), wrap="word")
+text_description.grid(row=3, column=1, padx=10, pady=10)
+
 
 btn_generate = tb.Button(content_frame, text="Generate & Save QR Code", bootstyle="success-outline", command=generate_qr, width=30)
 btn_generate.pack(pady=10)
